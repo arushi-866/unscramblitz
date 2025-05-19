@@ -101,7 +101,7 @@ const HomePage: React.FC = () => {
           
           {state.leaderboard && state.leaderboard.length > 0 ? (
             <div className="space-y-4">
-              {state.leaderboard.map((entry: LeaderboardEntry, index: number) => (
+              {state.leaderboard.slice(0, 10).map((entry: LeaderboardEntry, index: number) => (
                 <div
                   key={index}
                   className="bg-white rounded-lg p-4 shadow-sm flex items-center justify-between"
