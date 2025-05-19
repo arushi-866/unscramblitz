@@ -105,6 +105,14 @@ const GameSummary: React.FC = () => {
         <RotateCw size={18} className="mr-2" />
         Play Again
       </button>
+
+      <button
+        onClick={() => dispatch({ type: 'RESET_GAME' })}
+        className="flex items-center justify-center mx-auto mt-4 px-6 py-3 bg-gray-300 text-gray-800 
+          rounded-lg hover:bg-gray-400 transition-colors duration-300 shadow-sm"
+      >
+        Go to Home Page
+      </button>
     </div>
   );
 };
