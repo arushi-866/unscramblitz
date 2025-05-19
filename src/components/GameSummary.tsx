@@ -20,6 +20,10 @@ const GameSummary: React.FC = () => {
       setSubmitted(true);
     }
   };
+
+  // Calculate accuracy
+  const totalWords = words.length;
+  const accuracy = totalWords > 0 ? Math.round((wordsSolved / totalWords) * 100) : 0;
   
   return (
     <div className="text-center py-6">
@@ -37,17 +41,17 @@ const GameSummary: React.FC = () => {
         
         <div className="bg-purple-50 rounded-lg p-4">
           <div className="text-sm text-purple-600 font-medium">Words Solved</div>
-          <div className="text-3xl font-bold text-purple-700">{wordsSolved}/{words.length}</div>
+          <div className="text-3xl font-bold text-purple-700">{wordsSolved}/{totalWords}</div>
         </div>
         
         <div className="bg-pink-50 rounded-lg p-4">
-          <div className="text-sm text-pink-600 font-medium">Hints Used</div>
-          <div className="text-3xl font-bold text-pink-700">{hintsUsed}</div>
+          <div className="text-sm text-pink-600 font-medium">Accuracy</div>
+          <div className="text-3xl font-bold text-pink-700">{accuracy}%</div>
         </div>
         
         <div className="bg-orange-50 rounded-lg p-4">
-          <div className="text-sm text-orange-600 font-medium">Words Skipped</div>
-          <div className="text-3xl font-bold text-orange-700">{skippedWords}</div>
+          <div className="text-sm text-orange-600 font-medium">Hints Used</div>
+          <div className="text-3xl font-bold text-orange-700">{hintsUsed}</div>
         </div>
       </div>
       
@@ -105,4 +109,4 @@ const GameSummary: React.FC = () => {
   );
 };
 
-export default GameSummary
+export default GameSummary;

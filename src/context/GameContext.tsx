@@ -3,6 +3,35 @@ import { GameState, Word, LeaderboardEntry } from '../types';
 import wordList from '../data/wordList';
 import { prepareWordList, getHint } from '../utils/wordUtils';
 
+// Generate random leaderboard data
+const generateRandomLeaderboard = (): LeaderboardEntry[] => {
+  const names = ['Aarav', 'Ananya', 'Ishaan', 'Meera', 'Rohan', 'Saanvi', 'Karan', 'Priya', 'Vivaan', 'Sneha'];
+
+  const difficulties = ['easy', 'medium', 'hard'];
+  
+  return Array.from({ length: 20 }, (_, i) => ({
+    name: names[Math.floor(Math.random() * names.length)],
+    score: Math.floor(Math.random() * 500) + 100,
+    difficulty: difficulties[Math.floor(Math.random() * difficulties.length)],
+    wordsSolved: Math.floor(Math.random() * 20) + 5,
+    date: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString()
+  })).sort((a, b) => b.score - a.score);
+};
+
+// Initialize leaderboard from localStorage or generate random data
+const initializeLeaderboard = (): LeaderboardEntry[] => {
+  const savedLeaderboard = localStorage.getItem('wordGameLeaderboard');
+  if (savedLeaderboard) {
+    try {
+      return JSON.parse(savedLeaderboard);
+    } catch (e) {
+      console.error('Error parsing saved leaderboard:', e);
+      return generateRandomLeaderboard();
+    }
+  }
+  return generateRandomLeaderboard();
+};
+
 const initialState: GameState = {
   currentWordIndex: 0,
   words: [],
@@ -14,6 +43,7 @@ const initialState: GameState = {
   revealedLetters: [],
   difficulty: 'medium',
   skippedWords: 0,
+  leaderboard: initializeLeaderboard(),
 };
 
 type GameAction = 
@@ -25,7 +55,8 @@ type GameAction =
   | { type: 'USE_HINT' }
   | { type: 'TIMER_TICK' }
   | { type: 'END_GAME' }
-  | { type: 'RESET_GAME' };
+  | { type: 'RESET_GAME' }
+  | { type: 'SET_LEADERBOARD'; leaderboard: LeaderboardEntry[] };
 
 const getDifficultySettings = (difficulty: 'easy' | 'medium' | 'hard') => {
   switch (difficulty) {
@@ -41,18 +72,45 @@ const getDifficultySettings = (difficulty: 'easy' | 'medium' | 'hard') => {
 const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'START_GAME': {
-      const shuffledWords = prepareWordList(wordList);
       const { wordCount, timeLimit } = getDifficultySettings(action.difficulty);
-      const gameWords = [...shuffledWords]
+      const filteredWords = wordList.filter(word => word.difficulty === action.difficulty);
+      const gameWords = [...filteredWords]
         .sort(() => Math.random() - 0.5)
         .slice(0, wordCount);
       
+      const preparedWords = prepareWordList(gameWords);
+      
       return {
         ...initialState,
-        words: gameWords as Word[],
+        words: preparedWords,
         gameStatus: 'playing',
         timeLeft: timeLimit,
         difficulty: action.difficulty,
+        currentWordIndex: 0,
+        score: 0,
+        hintsUsed: 0,
+        wordsSolved: 0,
+        revealedLetters: [],
+        skippedWords: 0,
+      };
+    }
+    
+    case 'NEXT_WORD': {
+      const nextWordIndex = state.currentWordIndex + 1;
+      const { timeLimit } = getDifficultySettings(state.difficulty);
+      
+      if (nextWordIndex >= state.words.length) {
+        return {
+          ...state,
+          gameStatus: 'finished',
+        };
+      }
+      
+      return {
+        ...state,
+        currentWordIndex: nextWordIndex,
+        timeLeft: timeLimit,
+        revealedLetters: [],
       };
     }
     
@@ -74,25 +132,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         timeLeft: timeLimit,
         revealedLetters: [],
         skippedWords: state.skippedWords + 1,
-      };
-    }
-    
-    case 'NEXT_WORD': {
-      const nextWordIndex = state.currentWordIndex + 1;
-      const { timeLimit } = getDifficultySettings(state.difficulty);
-      
-      if (nextWordIndex >= state.words.length) {
-        return {
-          ...state,
-          gameStatus: 'finished',
-        };
-      }
-      
-      return {
-        ...state,
-        currentWordIndex: nextWordIndex,
-        timeLeft: timeLimit,
-        revealedLetters: [],
       };
     }
     
@@ -158,6 +197,12 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     case 'RESET_GAME':
       return initialState;
     
+    case 'SET_LEADERBOARD':
+      return {
+        ...state,
+        leaderboard: action.leaderboard,
+      };
+    
     default:
       return state;
   }
@@ -174,10 +219,11 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, initialState);
-  const [leaderboard, setLeaderboard] = React.useState<LeaderboardEntry[]>(() => {
-    const saved = localStorage.getItem('wordGameLeaderboard');
-    return saved ? JSON.parse(saved) : [];
-  });
+  
+  // Save leaderboard to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('wordGameLeaderboard', JSON.stringify(state.leaderboard));
+  }, [state.leaderboard]);
 
   const addToLeaderboard = (name: string) => {
     const newEntry: LeaderboardEntry = {
@@ -188,16 +234,15 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       date: new Date().toISOString(),
     };
 
-    const updatedLeaderboard = [...leaderboard, newEntry]
+    const updatedLeaderboard = [...state.leaderboard, newEntry]
       .sort((a, b) => b.score - a.score)
       .slice(0, 10);
 
-    setLeaderboard(updatedLeaderboard);
-    localStorage.setItem('wordGameLeaderboard', JSON.stringify(updatedLeaderboard));
+    dispatch({ type: 'SET_LEADERBOARD', leaderboard: updatedLeaderboard });
   };
 
   return (
-    <GameContext.Provider value={{ state, dispatch, leaderboard, addToLeaderboard }}>
+    <GameContext.Provider value={{ state, dispatch, leaderboard: state.leaderboard, addToLeaderboard }}>
       {children}
     </GameContext.Provider>
   );

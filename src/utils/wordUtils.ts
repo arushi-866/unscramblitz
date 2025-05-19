@@ -1,3 +1,5 @@
+import { WordEntry } from '../data/wordList';
+
 /**
  * Shuffles the letters of a word to create a scrambled version
  */
@@ -19,10 +21,10 @@ export const scrambleWord = (word: string): string => {
 /**
  * Prepares a list of words with their scrambled versions
  */
-export const prepareWordList = (words: string[]): { original: string; scrambled: string }[] => {
-  return words.map(word => ({
-    original: word,
-    scrambled: scrambleWord(word)
+export const prepareWordList = (words: WordEntry[]): { original: string; scrambled: string }[] => {
+  return words.map(wordEntry => ({
+    original: wordEntry.word,
+    scrambled: scrambleWord(wordEntry.word)
   }));
 };
 

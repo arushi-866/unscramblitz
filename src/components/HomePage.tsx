@@ -1,13 +1,26 @@
 import React from 'react';
 import { useGame } from '../context/GameContext';
 import { Play, Shuffle, Trophy } from 'lucide-react';
+import { LeaderboardEntry } from '../types';
 
 const HomePage: React.FC = () => {
-  const { dispatch, leaderboard } = useGame();
+  const { state, dispatch } = useGame();
   const [selectedDifficulty, setSelectedDifficulty] = React.useState<'easy' | 'medium' | 'hard'>('medium');
   
   const handleStartGame = () => {
+    // Reset any existing game state and start new game
+    dispatch({ type: 'RESET_GAME' });
     dispatch({ type: 'START_GAME', difficulty: selectedDifficulty });
+  };
+
+  // Format date to be more readable
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
   
   return (
@@ -86,9 +99,9 @@ const HomePage: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-800">Leaderboard</h2>
           </div>
           
-          {leaderboard.length > 0 ? (
+          {state.leaderboard && state.leaderboard.length > 0 ? (
             <div className="space-y-4">
-              {leaderboard.map((entry, index) => (
+              {state.leaderboard.map((entry: LeaderboardEntry, index: number) => (
                 <div
                   key={index}
                   className="bg-white rounded-lg p-4 shadow-sm flex items-center justify-between"
@@ -96,7 +109,7 @@ const HomePage: React.FC = () => {
                   <div>
                     <div className="font-semibold text-gray-800">{entry.name}</div>
                     <div className="text-sm text-gray-500">
-                      {entry.wordsSolved} words • {entry.difficulty}
+                      {entry.wordsSolved} words • {entry.difficulty} • {formatDate(entry.date)}
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-blue-600">{entry.score}</div>

@@ -15,6 +15,7 @@ export interface GameState {
   revealedLetters: string[];
   difficulty: 'easy' | 'medium' | 'hard';
   skippedWords: number;
+  leaderboard: LeaderboardEntry[];
 }
 
 export interface LeaderboardEntry {

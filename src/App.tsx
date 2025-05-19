@@ -1,29 +1,39 @@
-import React from 'react';
-import { GameProvider, useGame } from './context/GameContext';
+import React, { useState } from 'react';
 import HomePage from './components/HomePage';
+import WelcomePage from './components/WelcomePage';
 import GameBoard from './components/GameBoard';
+import { GameProvider } from './context/GameContext';
+import { useGame } from './context/GameContext';
 
-// Main App component wrapped with GameProvider
-function AppContent() {
+const AppContent: React.FC = () => {
+  const [showWelcome, setShowWelcome] = useState(true);
   const { state } = useGame();
   const { gameStatus } = state;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl">
-        {gameStatus === 'idle' ? <HomePage /> : <GameBoard />}
-      </div>
-    </div>
-  );
-}
+  const handleWelcomeComplete = (username: string) => {
+    setShowWelcome(false);
+  };
 
-// Wrapper component with provider
-function App() {
+  if (showWelcome) {
+    return <WelcomePage onComplete={handleWelcomeComplete} />;
+  }
+
+  // Show GameBoard for both playing and finished states
+  if (gameStatus === 'playing' || gameStatus === 'finished') {
+    return <GameBoard />;
+  }
+
+  return <HomePage />;
+};
+
+const App: React.FC = () => {
   return (
     <GameProvider>
-      <AppContent />
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100">
+        <AppContent />
+      </div>
     </GameProvider>
   );
-}
+};
 
 export default App;
